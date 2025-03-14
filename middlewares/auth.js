@@ -1,12 +1,10 @@
+// auth.js
 const jwt = require("jsonwebtoken");
-const jwt_decode = require("jwt-decode")
-const { promisify } = require("util");
-require('dotenv').config()
+require('dotenv').config();
 
 module.exports = function authorize(arrayOfAuthUsers) {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     const authHeader = req.headers.authorization;
-
     if (!authHeader) {
       return res.status(401).json({
         error: true,
@@ -15,21 +13,20 @@ module.exports = function authorize(arrayOfAuthUsers) {
       });
     }
 
-    const [, token] = authHeader.split(" ")
-
+    const [, token] = authHeader.split(" ");
     try {
-      const decode = jwt_decode(token);
-      req.userID = decode.id;
-      req.userRole = decode.role;
-      // logica
-      if (arrayOfAuthUsers.indexOf(decode.role) == -1) {
+      const decoded = jwt.verify(token, process.env.SECRET);
+      req.userID = decoded.id;
+      req.userRole = decoded.role;
+
+      if (arrayOfAuthUsers.indexOf(decoded.role) === -1) {
         return res.status(401).json({
           error: true,
           code: 161,
           message: "Erro: Usuário não autorizado!",
         });
       }
-      return next();
+      next();
     } catch (err) {
       return res.status(401).json({
         error: true,
@@ -38,4 +35,4 @@ module.exports = function authorize(arrayOfAuthUsers) {
       });
     }
   };
-}
+};

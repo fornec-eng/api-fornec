@@ -1,5 +1,5 @@
-const { Router, json } = require("express");
-
+// routes.js
+const { Router } = require("express");
 const authMidd = require("../middlewares/auth.js");
 
 const LoginController = require("../controllers/loginController");
@@ -7,25 +7,32 @@ const userController = require("../controllers/userController.js");
 
 const routes = new Router();
 
-// Login
+// Rota de login
 routes.post("/login", LoginController.login);
 
-
-// user
-routes.get("/list", userController.list)
+// Rotas de usuário
+routes.get("/list", userController.list);
 routes.post("/user", userController.create);
+
+// Rotas protegidas para Admin (gerenciamento geral)
 routes.get("/user/:id", authMidd(["Admin"]), userController.listOne);
 routes.put("/user/:id", authMidd(["Admin"]), userController.update);
 routes.delete("/user/:id", authMidd(["Admin"]), userController.delete);
+routes.get("/user/pending", authMidd(["Admin"]), userController.listPendingApprovals);
 
+// Rotas para que o próprio usuário atualize ou delete seu registro
+routes.put("/user/self", authMidd(["User", "Admin"]), userController.updateSelf);
+routes.delete("/user/self", authMidd(["User", "Admin"]), userController.deleteSelf);
 
-routes.get("/", (req, res, next) => {
+// Rota raiz
+routes.get("/", (req, res) => {
   res.status(200).json({
-    status: "Sucess",
+    status: "Success",
     msg: "Api Fornec rodando!",
   });
 });
 
+// Tratamento de rotas não encontradas
 routes.use((req, res, next) => {
   res.status(404).json({
     error: true,
@@ -33,10 +40,11 @@ routes.use((req, res, next) => {
   });
 });
 
+// Tratamento de erros internos
 routes.use((error, req, res, next) => {
-  console.log(error);
+  console.error(error);
   return res.status(500).json({
-    errror: true,
+    error: true,
     message: "Internal Server Error",
   });
 });
