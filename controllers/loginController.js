@@ -8,7 +8,7 @@ const User = require("../models/users");
 class LoginController {
   async login(req, res, next) {
     try {
-      const { email, senha } = req.body;
+      const { email, senha } = req.body.data;
       const userExiste = await User.findOne({ email });
 
       if (!userExiste) {
