@@ -55,7 +55,7 @@ class UserController {
   // Criar novo usuário
   async create(req, res) {
     try {
-      const { email, senha, nome, role } = req.body;
+      const { email, senha, nome, role } = req.body.novoUsuario;
 
       // Verifica duplicidade de email
       const emailExiste = await User.findOne({ email });
