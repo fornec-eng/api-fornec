@@ -4,6 +4,8 @@ const authMidd = require("../middlewares/auth.js");
 
 const LoginController = require("../controllers/loginController");
 const userController = require("../controllers/userController.js");
+const googleController = require("../controllers/googleController");
+
 
 const routes = new Router();
 
@@ -23,6 +25,14 @@ routes.get("/user/pending", authMidd(["Admin"]), userController.listPendingAppro
 // Rotas para que o próprio usuário atualize ou delete seu registro
 routes.put("/user/self", authMidd(["User", "Admin"]), userController.updateSelf);
 routes.delete("/user/self", authMidd(["User", "Admin"]), userController.deleteSelf);
+
+// Rotas do Google Drive e Sheets
+routes.get("/google/drive/folders", authMidd(["User", "Admin"]), googleController.listFolders);
+routes.get("/google/drive/:folderId", authMidd(["User", "Admin"]), googleController.listFiles);
+routes.post("/google/sheets/create", authMidd(["Admin"]), googleController.createSpreadsheet);
+routes.get("/google/sheets/data", authMidd(["User", "Admin"]), googleController.getSpreadsheetData);
+routes.get("/google/sheets/fullData", authMidd(["User", "Admin"]), googleController.getFullSpreadsheetData);
+routes.post("/google/sheets/copy", authMidd(["User", "Admin"]), googleController.copySpreadsheet);
 
 // Rota raiz
 routes.get("/", (req, res) => {
