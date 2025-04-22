@@ -31,6 +31,7 @@ routes.get("/google/drive/folders", authMidd(["User", "Admin"]), googleControlle
 routes.get("/google/drive/:folderId", authMidd(["User", "Admin"]), googleController.listFiles);
 routes.post("/google/sheets/create", authMidd(["Admin"]), googleController.createSpreadsheet);
 routes.post("/google/sheets/data", authMidd(["User", "Admin"]), googleController.getSpreadsheetData);
+routes.post("/google/sheets/inventario", googleController.getSpreadsheetData);
 routes.get("/google/sheets/fullData", authMidd(["User", "Admin"]), googleController.getFullSpreadsheetData);
 routes.post("/google/sheets/copy", authMidd(["User", "Admin"]), googleController.copySpreadsheet);
 
