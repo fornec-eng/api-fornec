@@ -1,144 +1,180 @@
-const { google } = require('googleapis');
-require("dotenv").config();
+const mongoose = require('mongoose');
 
-const SERVICE_ACCOUNT_CREDENTIALS = {
-  type: process.env.TYPE,
-  project_id: process.env.PROJECT_ID,
-  private_key_id: process.env.PRIVATE_KEY_ID,
-  private_key: process.env.PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  client_email: process.env.CLIENT_EMAIL,
-  client_id: process.env.CLIENT_ID,
-  auth_uri: process.env.AUTH_URI,
-  token_uri: process.env.TOKEN_URI,
-  auth_provider_x509_cert_url: process.env.AUTH_PROVIDER_X509_CERT_URL,
-  client_x509_cert_url: process.env.CLIENT_X509_CERT_URL,
-  universe_domain: process.env.UNIVERSE_DOMAIN
-};
+// Schema para gastos individuais
+const gastoSchema = new mongoose.Schema({
+  descricao: {
+    type: String,
+    required: true
+  },
+  categoria: {
+    type: String,
+    required: true
+  },
+  valor: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  data: {
+    type: Date,
+    default: Date.now
+  },
+  fornecedor: String,
+  observacoes: String
+}, { timestamps: true });
 
-const auth = new google.auth.GoogleAuth({
-  credentials: SERVICE_ACCOUNT_CREDENTIALS,
-  scopes: [
-    'https://www.googleapis.com/auth/drive',
-    'https://www.googleapis.com/auth/spreadsheets'
-  ]
+// Schema para contratos
+const contratoSchema = new mongoose.Schema({
+  nomeContratado: {
+    type: String,
+    required: true
+  },
+  servico: {
+    type: String,
+    required: true
+  },
+  valorTotal: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  dataInicio: Date,
+  dataFim: Date,
+  status: {
+    type: String,
+    enum: ['ativo', 'concluido', 'cancelado'],
+    default: 'ativo'
+  },
+  observacoes: String
+}, { timestamps: true });
+
+// Schema para cronograma
+const cronogramaSchema = new mongoose.Schema({
+  etapa: {
+    type: String,
+    required: true
+  },
+  descricao: String,
+  dataInicio: Date,
+  dataFim: Date,
+  status: {
+    type: String,
+    enum: ['previsto', 'em andamento', 'concluida', 'atrasada'],
+    default: 'previsto'
+  },
+  responsavel: String,
+  percentualConcluido: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  }
+}, { timestamps: true });
+
+// Schema para pagamentos semanais
+const pagamentoSemanalSchema = new mongoose.Schema({
+  semana: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 53
+  },
+  ano: {
+    type: Number,
+    required: true
+  },
+  totalReceber: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  dataVencimento: Date,
+  status: {
+    type: String,
+    enum: ['pagar', 'pagamento efetuado'],
+    default: 'pagar'
+  },
+  dataPagamento: Date,
+  observacoes: String
+}, { timestamps: true });
+
+// Schema para obra
+const obraSchema = new mongoose.Schema({
+  nome: {
+    type: String,
+    required: true
+  },
+  dataInicio: {
+    type: Date,
+    required: true
+  },
+  dataFinalEntrega: {
+    type: Date,
+    required: true
+  },
+  orcamento: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  descricao: String,
+  endereco: String,
+  responsavel: String,
+  status: {
+    type: String,
+    enum: ['planejamento', 'em andamento', 'concluida', 'pausada', 'cancelada'],
+    default: 'planejamento'
+  }
 });
 
-const drive = google.drive({ version: 'v3', auth });
-const sheets = google.sheets({ version: 'v4', auth });
+// Schema principal do pagamento (que representa uma obra completa)
+const pagamentoSchema = new mongoose.Schema({
+  obra: {
+    type: obraSchema,
+    required: true
+  },
+  gastos: [gastoSchema],
+  contratos: [contratoSchema],
+  cronograma: [cronogramaSchema],
+  pagamentosSemanais: [pagamentoSemanalSchema]
+}, { timestamps: true });
 
-class GoogleController {
-  /**
-   * Listar arquivos dentro de uma pasta específica do Google Drive
-   */
-  async listFiles(req, res) {
-    try {
-      const folderId = req.params.folderId;
-      const response = await drive.files.list({
-        q: `'${folderId}' in parents and trashed=false`,
-        fields: 'files(id, name)'
-      });
-      res.json(response.data.files);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao listar arquivos', details: error.message });
-    }
-  }
+// Virtuals para cálculos automáticos
+pagamentoSchema.virtual('valorTotalGasto').get(function() {
+  const totalGastos = this.gastos.reduce((acc, gasto) => acc + gasto.valor, 0);
+  const totalContratos = this.contratos.reduce((acc, contrato) => acc + contrato.valorTotal, 0);
+  const totalPagamentosSemanais = this.pagamentosSemanais.reduce((acc, ps) => acc + ps.totalReceber, 0);
+  return totalGastos + totalContratos + totalPagamentosSemanais;
+});
 
-  /**
-   * Listar todas as pastas do Google Drive
-   */
-  async listFolders(req, res) {
-    try {
-      const response = await drive.files.list({
-        q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
-        fields: 'files(id, name)'
-      });
-      res.json(response.data.files);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao listar pastas', details: error.message });
-    }
-  }
+pagamentoSchema.virtual('saldoRestante').get(function() {
+  return this.obra.orcamento - this.valorTotalGasto;
+});
 
-  /**
-   * Criar uma nova planilha seguindo um modelo pré-definido
-   */
-  async createSpreadsheet(req, res) {
-    try {
-      const response = await sheets.spreadsheets.create({
-        resource: {
-          properties: {
-            title: req.body.title || 'Nova Planilha'
-          },
-          sheets: [
-            {
-              properties: { title: 'Dados' },
-              data: [{
-                startRow: 0,
-                startColumn: 0,
-                rowData: [{ values: [
-                  { userEnteredValue: { stringValue: 'Nome' } },
-                  { userEnteredValue: { stringValue: 'Email' } },
-                  { userEnteredValue: { stringValue: 'Telefone' } }
-                ] }]
-              }]
-            }
-          ]
-        }
-      });
-      res.json({ message: 'Planilha criada com sucesso', spreadsheetId: response.data.spreadsheetId });
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao criar planilha', details: error.message });
-    }
-  }
+pagamentoSchema.virtual('statusOrcamento').get(function() {
+  const percentualGasto = (this.valorTotalGasto / this.obra.orcamento) * 100;
+  if (percentualGasto <= 70) return 'dentro do orçamento';
+  if (percentualGasto <= 90) return 'atenção';
+  if (percentualGasto <= 100) return 'próximo do limite';
+  return 'acima do orçamento';
+});
 
-  /**
-   * Buscar dados de uma planilha específica
-   */
-  async getSpreadsheetData(req, res) {
-    try {
-      const { spreadsheetId, range } = req.body.data;
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: spreadsheetId,
-        range: range
-      });
-      res.json(response.data);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar dados da planilha', details: error.message });
-    }
-  }
+pagamentoSchema.virtual('percentualConcluido').get(function() {
+  if (this.cronograma.length === 0) return 0;
+  const concluidas = this.cronograma.filter(etapa => etapa.status === 'concluida').length;
+  return Math.round((concluidas / this.cronograma.length) * 100);
+});
 
-  async copySpreadsheet(req, res) {
-    try {
-      const { templateId, newTitle, folderId } = req.body.data; // folderId é opcional
-      const resource = { 
-        name: newTitle
-      };
-      // Se o folderId for informado, adiciona a propriedade 'parents'
-      if (folderId) {
-        resource.parents = [folderId];
-      }
-      const response = await drive.files.copy({
-        fileId: templateId,
-        resource
-      });
-      res.json({ message: 'Planilha criada com sucesso', spreadsheetId: response.data.id });
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao copiar planilha', details: error.message });
-    }
-  }
+pagamentoSchema.virtual('diasRestantes').get(function() {
+  const hoje = new Date();
+  const dataFim = new Date(this.obra.dataFinalEntrega);
+  const diffTime = dataFim.getTime() - hoje.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+});
 
-  async getFullSpreadsheetData(req, res) {
-    try {
-      const { spreadsheetId, includeData } = req.query.data; // Ex: includeData=true
-      const response = await sheets.spreadsheets.get({
-        spreadsheetId,
-        includeGridData: includeData === 'true'
-      });
-      res.json(response.data);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar dados completos da planilha', details: error.message });
-    }
-  }
- 
-}
+// Configurar virtuals para JSON
+pagamentoSchema.set('toJSON', { virtuals: true });
+pagamentoSchema.set('toObject', { virtuals: true });
 
-module.exports = new GoogleController();
+module.exports = mongoose.model('Pagamento', pagamentoSchema);
