@@ -6,15 +6,20 @@ const LoginController = require("../controllers/loginController")
 const userController = require("../controllers/userController.js")
 const googleController = require("../controllers/googleController")
 
-// Adicionar a importação do controller de pagamentos após as outras importações
-const pagamentosController = require("../controllers/pagamentosController")
+// Importar os novos controllers
+const obraController = require("../controllers/obraController")
+const maoObraController = require("../controllers/maoObraController")
+const contratosController = require("../controllers/contratosController")
+const materialController = require("../controllers/materialController")
+const equipamentosController = require("../controllers/equipamentosController")
+const outrosGastosController = require("../controllers/outrosGastosController")
 
 const routes = new Router()
 
-// Rota de login
+// ==================== ROTAS DE AUTENTICAÇÃO ====================
 routes.post("/login", LoginController.login)
 
-// Rotas de usuário
+// ==================== ROTAS DE USUÁRIO ====================
 routes.get("/list", userController.list)
 routes.post("/user", userController.create)
 
@@ -28,79 +33,158 @@ routes.get("/user/pending", authMidd(["Admin"]), userController.listPendingAppro
 routes.put("/user/self", authMidd(["User", "Admin"]), userController.updateSelf)
 routes.delete("/user/self", authMidd(["User", "Admin"]), userController.deleteSelf)
 
-// Rotas do Google Drive e Sheets
+// ==================== ROTAS DO GOOGLE DRIVE E SHEETS ====================
 routes.get("/google/drive/folders", authMidd(["User", "Admin"]), googleController.listFolders)
 routes.get("/google/drive/:folderId", authMidd(["User", "Admin"]), googleController.listFiles)
 routes.post("/google/sheets/create", authMidd(["Admin"]), googleController.createSpreadsheet)
 routes.post("/google/sheets/data", authMidd(["User", "Admin"]), googleController.getSpreadsheetData)
 routes.post("/google/sheets/inventario", googleController.getSpreadsheetData)
 routes.get("/google/sheets/fullData", authMidd(["User", "Admin"]), googleController.getFullSpreadsheetData)
-routes.post("/google/sheets/copy", authMidd(["Admin"]), googleController.copySpreadsheet)
+routes.post("/google/sheets/copy", authMidd(["User", "Admin"]), googleController.copySpreadsheet)
+routes.put("/google/sheets/update", authMidd(["User", "Admin"]), googleController.updateSpreadsheetData) // Nova rota
+routes.post("/google/sheets/add-sheet", authMidd(["User", "Admin"]), googleController.addSheet) // Nova rota
+routes.delete("/google/drive/files/:fileId", authMidd(["Admin"]), googleController.deleteFile)
 
-// Adicionar todas as rotas de pagamentos após as rotas do Google e antes da rota raiz
-
-// Comentar ou remover o middleware de autenticação das rotas de pagamentos para testes
-
-// ==================== ROTAS DE PAGAMENTOS (SEM AUTENTICAÇÃO PARA TESTES) ====================
-
-// Operações gerais
-routes.get("/pagamentos", pagamentosController.list)
-routes.get("/pagamentos/:id", pagamentosController.listOne)
-routes.post("/pagamentos", pagamentosController.create)
-routes.put("/pagamentos/:id/obra", pagamentosController.updateObra)
-routes.delete("/pagamentos/:id", pagamentosController.delete)
-
-// Gestão de gastos
-routes.post("/pagamentos/:id/gastos", pagamentosController.addGasto)
-routes.put("/pagamentos/:id/gastos/:gastoId", pagamentosController.updateGasto)
-routes.delete("/pagamentos/:id/gastos/:gastoId", pagamentosController.removeGasto)
-
-// Gestão de contratos
-routes.post("/pagamentos/:id/contratos", pagamentosController.addContrato)
-routes.put("/pagamentos/:id/contratos/:contratoId", pagamentosController.updateContrato)
-routes.delete("/pagamentos/:id/contratos/:contratoId", pagamentosController.removeContrato)
-
-// Gestão de cronograma
-routes.post("/pagamentos/:id/cronograma", pagamentosController.addEtapaCronograma)
-routes.put("/pagamentos/:id/cronograma/:etapaId", pagamentosController.updateEtapaCronograma)
-routes.delete("/pagamentos/:id/cronograma/:etapaId", pagamentosController.removeEtapaCronograma)
-
-// Gestão de pagamentos semanais
-routes.post("/pagamentos/:id/pagamentos-semanais", pagamentosController.addPagamentoSemanal)
-routes.put("/pagamentos/:id/pagamentos-semanais/:pagamentoSemanalId", pagamentosController.updatePagamentoSemanal)
-routes.delete("/pagamentos/:id/pagamentos-semanais/:pagamentoSemanalId", pagamentosController.removePagamentoSemanal)
-routes.patch(
-  "/pagamentos/:id/pagamentos-semanais/:pagamentoSemanalId/efetuado",
-  pagamentosController.marcarPagamentoEfetuado,
+// ==================== ROTAS DE OBRAS ====================
+routes.get("/obras", authMidd(["User", "Admin"]), (req, res) => obraController.readAll(req, res))
+routes.post("/obras", authMidd(["User", "Admin"]), (req, res) => obraController.create(req, res))
+routes.get("/obras/:id", authMidd(["User", "Admin"]), (req, res) => obraController.readById(req, res))
+routes.put("/obras/:id", authMidd(["User", "Admin"]), (req, res) => obraController.update(req, res))
+routes.delete("/obras/:id", authMidd(["Admin"]), (req, res) => obraController.delete(req, res))
+routes.get("/obras/:id/relatorio-gastos", authMidd(["User", "Admin"]), (req, res) =>
+  obraController.relatorioGastos(req, res),
 )
-routes.get("/pagamentos/semanais/pendentes", pagamentosController.listarPagamentosPendentes)
+routes.put("/obras/:id/spreadsheet", authMidd(["User", "Admin"]), (req, res) =>
+  obraController.updateSpreadsheetId(req, res),
+)
+routes.get("/obras/spreadsheet/:spreadsheetId", authMidd(["User", "Admin"]), (req, res) =>
+  obraController.getBySpreadsheetId(req, res),
+)
 
-// Relatórios
-routes.get("/pagamentos/:id/relatorio-financeiro", pagamentosController.relatorioFinanceiro)
-routes.get("/pagamentos/relatorio-semanais", pagamentosController.relatorioPagamentosSemanais)
+// ==================== ROTAS DE MÃO DE OBRA ====================
+routes.get("/mao-obra", authMidd(["User", "Admin"]), (req, res) => maoObraController.readAll(req, res))
+routes.post("/mao-obra", authMidd(["User", "Admin"]), (req, res) => maoObraController.create(req, res))
+routes.get("/mao-obra/:id", authMidd(["User", "Admin"]), (req, res) => maoObraController.readById(req, res))
+routes.put("/mao-obra/:id", authMidd(["User", "Admin"]), (req, res) => maoObraController.update(req, res))
+routes.delete("/mao-obra/:id", authMidd(["Admin"]), (req, res) => maoObraController.delete(req, res))
 
-// Rota raiz
+// ==================== ROTAS DE CONTRATOS ====================
+routes.get("/contratos", authMidd(["User", "Admin"]), (req, res) => contratosController.readAll(req, res))
+routes.post("/contratos", authMidd(["User", "Admin"]), (req, res) => contratosController.create(req, res))
+routes.get("/contratos/:id", authMidd(["User", "Admin"]), (req, res) => contratosController.readById(req, res))
+routes.put("/contratos/:id", authMidd(["User", "Admin"]), (req, res) => contratosController.update(req, res))
+routes.delete("/contratos/:id", authMidd(["Admin"]), (req, res) => contratosController.delete(req, res))
+
+// ==================== ROTAS DE MATERIAIS ====================
+routes.get("/materiais", authMidd(["User", "Admin"]), (req, res) => materialController.readAll(req, res))
+routes.post("/materiais", authMidd(["User", "Admin"]), (req, res) => materialController.create(req, res))
+routes.get("/materiais/:id", authMidd(["User", "Admin"]), (req, res) => materialController.readById(req, res))
+routes.put("/materiais/:id", authMidd(["User", "Admin"]), (req, res) => materialController.update(req, res))
+routes.delete("/materiais/:id", authMidd(["Admin"]), (req, res) => materialController.delete(req, res))
+
+// ==================== ROTAS DE EQUIPAMENTOS ====================
+routes.get("/equipamentos", authMidd(["User", "Admin"]), (req, res) => equipamentosController.readAll(req, res))
+routes.post("/equipamentos", authMidd(["User", "Admin"]), (req, res) => equipamentosController.create(req, res))
+routes.get("/equipamentos/:id", authMidd(["User", "Admin"]), (req, res) => equipamentosController.readById(req, res))
+routes.put("/equipamentos/:id", authMidd(["User", "Admin"]), (req, res) => equipamentosController.update(req, res))
+routes.delete("/equipamentos/:id", authMidd(["Admin"]), (req, res) => equipamentosController.delete(req, res))
+
+// ==================== ROTAS DE OUTROS GASTOS ====================
+routes.get("/outros-gastos", authMidd(["User", "Admin"]), (req, res) => outrosGastosController.readAll(req, res))
+routes.post("/outros-gastos", authMidd(["User", "Admin"]), (req, res) => outrosGastosController.create(req, res))
+routes.get("/outros-gastos/:id", authMidd(["User", "Admin"]), (req, res) => outrosGastosController.readById(req, res))
+routes.put("/outros-gastos/:id", authMidd(["User", "Admin"]), (req, res) => outrosGastosController.update(req, res))
+routes.delete("/outros-gastos/:id", authMidd(["Admin"]), (req, res) => outrosGastosController.delete(req, res))
+routes.get("/outros-gastos/relatorio/categoria", authMidd(["User", "Admin"]), (req, res) =>
+  outrosGastosController.relatorioPorCategoria(req, res),
+)
+
+// ==================== ROTA RAIZ ====================
 routes.get("/", (req, res) => {
   res.status(200).json({
     status: "Success",
-    msg: "Api Fornec rodando!",
+    msg: "API Fornec - Sistema de Gerenciamento de Gastos rodando!",
+    version: "2.0.0",
+    endpoints: {
+      obras: "/obras",
+      maoObra: "/mao-obra",
+      contratos: "/contratos",
+      materiais: "/materiais",
+      equipamentos: "/equipamentos",
+      outrosGastos: "/outros-gastos",
+      googleSheets: {
+        listFolders: "/google/drive/folders",
+        listFiles: "/google/drive/:folderId",
+        createSpreadsheet: "/google/sheets/create",
+        copySpreadsheet: "/google/sheets/copy",
+        getSpreadsheetData: "/google/sheets/data",
+        getFullSpreadsheetData: "/google/sheets/fullData",
+        updateSpreadsheetData: "/google/sheets/update", // Nova
+        addSheet: "/google/sheets/add-sheet", // Nova
+      },
+    },
   })
 })
 
+// ==================== TRATAMENTO DE ERROS ====================
 // Tratamento de rotas não encontradas
 routes.use((req, res, next) => {
   res.status(404).json({
     error: true,
-    msg: "Not Found",
+    msg: "Endpoint não encontrado",
+    availableEndpoints: [
+      "GET /obras",
+      "POST /obras",
+      "GET /obras/:id",
+      "PUT /obras/:id",
+      "DELETE /obras/:id",
+      "GET /mao-obra",
+      "POST /mao-obra",
+      "GET /mao-obra/:id",
+      "PUT /mao-obra/:id",
+      "DELETE /mao-obra/:id",
+      "GET /contratos",
+      "POST /contratos",
+      "GET /contratos/:id",
+      "PUT /contratos/:id",
+      "DELETE /contratos/:id",
+      "GET /materiais",
+      "POST /materiais",
+      "GET /materiais/:id",
+      "PUT /materiais/:id",
+      "DELETE /materiais/:id",
+      "GET /equipamentos",
+      "POST /equipamentos",
+      "GET /equipamentos/:id",
+      "PUT /equipamentos/:id",
+      "DELETE /equipamentos/:id",
+      "GET /outros-gastos",
+      "POST /outros-gastos",
+      "GET /outros-gastos/:id",
+      "PUT /outros-gastos/:id",
+      "DELETE /outros-gastos/:id",
+      "GET /google/drive/folders",
+      "GET /google/drive/:folderId",
+      "POST /google/sheets/create",
+      "POST /google/sheets/data",
+      "POST /google/sheets/inventario",
+      "GET /google/sheets/fullData",
+      "POST /google/sheets/copy",
+      "PUT /google/sheets/update", // Nova
+      "POST /google/sheets/add-sheet", // Nova,
+      "PUT /obras/:id/spreadsheet",
+      "GET /obras/spreadsheet/:spreadsheetId",
+    ],
   })
 })
 
 // Tratamento de erros internos
 routes.use((error, req, res, next) => {
-  console.error(error)
+  console.error("Erro interno:", error)
   return res.status(500).json({
     error: true,
-    message: "Internal Server Error",
+    message: "Erro interno do servidor",
+    details: process.env.NODE_ENV === "development" ? error.message : "Contate o administrador",
   })
 })
 
