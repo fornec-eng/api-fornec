@@ -1,7 +1,7 @@
 // Arquivo de referência para o frontend - apiService.js
 // Este arquivo mostra como o frontend deve fazer as chamadas para a API
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:4000"
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api-fornec.vercel.app/"
 
 class ApiService {
   constructor() {
