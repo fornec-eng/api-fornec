@@ -28,14 +28,12 @@ class ContratosController {
   // Listar todos os contratos
   async readAll(req, res) {
     try {
-      const { page = 1, limit = 10, obraId, status, tipoPagamento, nome, statusPagamento } = req.query
+      const { page = 1, limit = 10, obraId, status, loja } = req.query
 
       const filter = {}
       if (obraId) filter.obraId = obraId
       if (status) filter.status = status
-      if (tipoPagamento) filter.tipoPagamento = tipoPagamento
-      if (nome) filter.nome = new RegExp(nome, "i")
-      if (statusPagamento) filter.statusPagamento = statusPagamento
+      if (loja) filter.loja = new RegExp(loja, "i")
 
       const skip = (page - 1) * limit
 
@@ -142,6 +140,264 @@ class ContratosController {
       return res.status(500).json({
         error: true,
         message: "Erro ao deletar contrato",
+        details: error.message,
+      })
+    }
+  }
+
+  // ==================== OPERAÇÕES DE PAGAMENTOS ====================
+
+  // Adicionar pagamento ao contrato
+  async adicionarPagamento(req, res) {
+    try {
+      const contrato = await Contratos.findById(req.params.id)
+
+      if (!contrato) {
+        return res.status(404).json({
+          error: true,
+          message: "Contrato não encontrado",
+        })
+      }
+
+      await contrato.adicionarPagamento(req.body)
+
+      const contratoAtualizado = await Contratos.findById(req.params.id)
+        .populate("criadoPor", "nome email")
+        .populate("obraId", "nome cliente")
+
+      return res.status(201).json({
+        error: false,
+        message: "Pagamento adicionado com sucesso",
+        contrato: contratoAtualizado,
+      })
+    } catch (error) {
+      return res.status(400).json({
+        error: true,
+        message: "Erro ao adicionar pagamento",
+        details: error.message,
+      })
+    }
+  }
+
+  // Buscar pagamento específico
+  async buscarPagamento(req, res) {
+    try {
+      const contrato = await Contratos.findById(req.params.id)
+
+      if (!contrato) {
+        return res.status(404).json({
+          error: true,
+          message: "Contrato não encontrado",
+        })
+      }
+
+      const pagamento = contrato.buscarPagamento(req.params.pagamentoId)
+
+      if (!pagamento) {
+        return res.status(404).json({
+          error: true,
+          message: "Pagamento não encontrado",
+        })
+      }
+
+      return res.json({
+        error: false,
+        pagamento,
+      })
+    } catch (error) {
+      return res.status(500).json({
+        error: true,
+        message: "Erro ao buscar pagamento",
+        details: error.message,
+      })
+    }
+  }
+
+  // Atualizar pagamento
+  async atualizarPagamento(req, res) {
+    try {
+      const contrato = await Contratos.findById(req.params.id)
+
+      if (!contrato) {
+        return res.status(404).json({
+          error: true,
+          message: "Contrato não encontrado",
+        })
+      }
+
+      await contrato.atualizarPagamento(req.params.pagamentoId, req.body)
+
+      const contratoAtualizado = await Contratos.findById(req.params.id)
+        .populate("criadoPor", "nome email")
+        .populate("obraId", "nome cliente")
+
+      return res.json({
+        error: false,
+        message: "Pagamento atualizado com sucesso",
+        contrato: contratoAtualizado,
+      })
+    } catch (error) {
+      return res.status(400).json({
+        error: true,
+        message: "Erro ao atualizar pagamento",
+        details: error.message,
+      })
+    }
+  }
+
+  // Remover pagamento
+  async removerPagamento(req, res) {
+    try {
+      const contrato = await Contratos.findById(req.params.id)
+
+      if (!contrato) {
+        return res.status(404).json({
+          error: true,
+          message: "Contrato não encontrado",
+        })
+      }
+
+      await contrato.removerPagamento(req.params.pagamentoId)
+
+      const contratoAtualizado = await Contratos.findById(req.params.id)
+        .populate("criadoPor", "nome email")
+        .populate("obraId", "nome cliente")
+
+      return res.json({
+        error: false,
+        message: "Pagamento removido com sucesso",
+        contrato: contratoAtualizado,
+      })
+    } catch (error) {
+      return res.status(400).json({
+        error: true,
+        message: "Erro ao remover pagamento",
+        details: error.message,
+      })
+    }
+  }
+
+  // Listar todos os pagamentos de um contrato
+  async listarPagamentos(req, res) {
+    try {
+      const contrato = await Contratos.findById(req.params.id)
+
+      if (!contrato) {
+        return res.status(404).json({
+          error: true,
+          message: "Contrato não encontrado",
+        })
+      }
+
+      return res.json({
+        error: false,
+        pagamentos: contrato.pagamentos,
+        valorTotalPagamentos: contrato.valorTotalPagamentos,
+        statusGeralPagamentos: contrato.statusGeralPagamentos,
+      })
+    } catch (error) {
+      return res.status(500).json({
+        error: true,
+        message: "Erro ao listar pagamentos",
+        details: error.message,
+      })
+    }
+  }
+
+  // Relatório de pagamentos por status
+  async relatorioPagamentos(req, res) {
+    try {
+      const { status, dataInicio, dataFim, obraId } = req.query
+      const mongoose = require("mongoose")
+
+      const pipeline = []
+
+      // Match inicial para filtrar contratos
+      const matchStage = {}
+      if (obraId) matchStage.obraId = new mongoose.Types.ObjectId(obraId)
+      if (Object.keys(matchStage).length > 0) {
+        pipeline.push({ $match: matchStage })
+      }
+
+      // Unwind para separar pagamentos
+      pipeline.push({ $unwind: "$pagamentos" })
+
+      // Match para filtrar pagamentos
+      const pagamentoMatchStage = {}
+      if (status) pagamentoMatchStage["pagamentos.statusPagamento"] = status
+      if (dataInicio || dataFim) {
+        pagamentoMatchStage["pagamentos.dataPagamento"] = {}
+        if (dataInicio) pagamentoMatchStage["pagamentos.dataPagamento"].$gte = new Date(dataInicio)
+        if (dataFim) pagamentoMatchStage["pagamentos.dataPagamento"].$lte = new Date(dataFim)
+      }
+
+      if (Object.keys(pagamentoMatchStage).length > 0) {
+        pipeline.push({ $match: pagamentoMatchStage })
+      }
+
+      // Group por status
+      pipeline.push({
+        $group: {
+          _id: "$pagamentos.statusPagamento",
+          total: { $sum: 1 },
+          valorTotal: { $sum: "$pagamentos.valor" },
+          contratos: { 
+            $addToSet: {
+              contratoId: "$contratoId",
+              loja: "$loja",
+              obraId: "$obraId"
+            }
+          },
+          pagamentos: { 
+            $push: {
+              _id: "$pagamentos._id",
+              valor: "$pagamentos.valor",
+              tipoPagamento: "$pagamentos.tipoPagamento",
+              dataPagamento: "$pagamentos.dataPagamento",
+              observacoes: "$pagamentos.observacoes",
+              contratoInfo: {
+                _id: "$_id",
+                contratoId: "$contratoId", 
+                loja: "$loja"
+              }
+            }
+          },
+        },
+      })
+
+      // Adicionar resumo geral
+      pipeline.push({
+        $group: {
+          _id: null,
+          porStatus: {
+            $push: {
+              status: "$_id",
+              total: "$total",
+              valorTotal: "$valorTotal",
+              contratos: "$contratos",
+              pagamentos: "$pagamentos"
+            }
+          },
+          totalGeral: { $sum: "$total" },
+          valorTotalGeral: { $sum: "$valorTotal" }
+        }
+      })
+
+      const resultado = await Contratos.aggregate(pipeline)
+
+      return res.json({
+        error: false,
+        relatorio: resultado.length > 0 ? resultado[0] : {
+          porStatus: [],
+          totalGeral: 0,
+          valorTotalGeral: 0
+        },
+      })
+    } catch (error) {
+      console.error("Erro no relatório:", error)
+      return res.status(500).json({
+        error: true,
+        message: "Erro ao gerar relatório",
         details: error.message,
       })
     }

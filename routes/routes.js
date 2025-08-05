@@ -68,12 +68,23 @@ routes.get("/mao-obra/:id", authMidd(["User", "Admin"]), (req, res) => maoObraCo
 routes.put("/mao-obra/:id", authMidd(["User", "Admin"]), (req, res) => maoObraController.update(req, res))
 routes.delete("/mao-obra/:id", authMidd(["Admin"]), (req, res) => maoObraController.delete(req, res))
 
-// ==================== ROTAS DE CONTRATOS ====================
+// ==================== ROTAS DE CONTRATOS ATUALIZADAS ====================
+
+routes.get("/contratos/relatorio/pagamentos", authMidd(["User", "Admin"]), (req, res) => contratosController.relatorioPagamentos(req, res))
+
+// CRUD básico de contratos
 routes.get("/contratos", authMidd(["User", "Admin"]), (req, res) => contratosController.readAll(req, res))
 routes.post("/contratos", authMidd(["User", "Admin"]), (req, res) => contratosController.create(req, res))
 routes.get("/contratos/:id", authMidd(["User", "Admin"]), (req, res) => contratosController.readById(req, res))
 routes.put("/contratos/:id", authMidd(["User", "Admin"]), (req, res) => contratosController.update(req, res))
 routes.delete("/contratos/:id", authMidd(["Admin"]), (req, res) => contratosController.delete(req, res))
+
+// CRUD de pagamentos dentro dos contratos
+routes.get("/contratos/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) => contratosController.listarPagamentos(req, res))
+routes.post("/contratos/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) => contratosController.adicionarPagamento(req, res))
+routes.get("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) => contratosController.buscarPagamento(req, res))
+routes.put("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) => contratosController.atualizarPagamento(req, res))
+routes.delete("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) => contratosController.removerPagamento(req, res))
 
 // ==================== ROTAS DE MATERIAIS ====================
 routes.get("/materiais", authMidd(["User", "Admin"]), (req, res) => materialController.readAll(req, res))
