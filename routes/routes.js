@@ -13,6 +13,7 @@ const contratosController = require("../controllers/contratosController")
 const materialController = require("../controllers/materialController")
 const equipamentosController = require("../controllers/equipamentosController")
 const outrosGastosController = require("../controllers/outrosGastosController")
+const entradaController = require("../controllers/entradaController")
 
 const routes = new Router()
 
@@ -70,7 +71,9 @@ routes.delete("/mao-obra/:id", authMidd(["Admin"]), (req, res) => maoObraControl
 
 // ==================== ROTAS DE CONTRATOS ATUALIZADAS ====================
 
-routes.get("/contratos/relatorio/pagamentos", authMidd(["User", "Admin"]), (req, res) => contratosController.relatorioPagamentos(req, res))
+routes.get("/contratos/relatorio/pagamentos", authMidd(["User", "Admin"]), (req, res) =>
+  contratosController.relatorioPagamentos(req, res),
+)
 
 // CRUD básico de contratos
 routes.get("/contratos", authMidd(["User", "Admin"]), (req, res) => contratosController.readAll(req, res))
@@ -80,11 +83,21 @@ routes.put("/contratos/:id", authMidd(["User", "Admin"]), (req, res) => contrato
 routes.delete("/contratos/:id", authMidd(["Admin"]), (req, res) => contratosController.delete(req, res))
 
 // CRUD de pagamentos dentro dos contratos
-routes.get("/contratos/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) => contratosController.listarPagamentos(req, res))
-routes.post("/contratos/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) => contratosController.adicionarPagamento(req, res))
-routes.get("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) => contratosController.buscarPagamento(req, res))
-routes.put("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) => contratosController.atualizarPagamento(req, res))
-routes.delete("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) => contratosController.removerPagamento(req, res))
+routes.get("/contratos/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) =>
+  contratosController.listarPagamentos(req, res),
+)
+routes.post("/contratos/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) =>
+  contratosController.adicionarPagamento(req, res),
+)
+routes.get("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) =>
+  contratosController.buscarPagamento(req, res),
+)
+routes.put("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) =>
+  contratosController.atualizarPagamento(req, res),
+)
+routes.delete("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) =>
+  contratosController.removerPagamento(req, res),
+)
 
 // ==================== ROTAS DE MATERIAIS ====================
 routes.get("/materiais", authMidd(["User", "Admin"]), (req, res) => materialController.readAll(req, res))
@@ -110,6 +123,13 @@ routes.get("/outros-gastos/relatorio/categoria", authMidd(["User", "Admin"]), (r
   outrosGastosController.relatorioPorCategoria(req, res),
 )
 
+// ==================== ROTAS DE ENTRADAS ====================
+routes.get("/entradas", authMidd(["User", "Admin"]), (req, res) => entradaController.readAll(req, res))
+routes.post("/entradas", authMidd(["User", "Admin"]), (req, res) => entradaController.create(req, res))
+routes.get("/entradas/:id", authMidd(["User", "Admin"]), (req, res) => entradaController.readById(req, res))
+routes.put("/entradas/:id", authMidd(["User", "Admin"]), (req, res) => entradaController.update(req, res))
+routes.delete("/entradas/:id", authMidd(["Admin"]), (req, res) => entradaController.delete(req, res))
+
 // ==================== ROTA RAIZ ====================
 routes.get("/", (req, res) => {
   res.status(200).json({
@@ -123,6 +143,7 @@ routes.get("/", (req, res) => {
       materiais: "/materiais",
       equipamentos: "/equipamentos",
       outrosGastos: "/outros-gastos",
+      entradas: "/entradas",
       googleSheets: {
         listFolders: "/google/drive/folders",
         listFiles: "/google/drive/:folderId",
@@ -174,6 +195,13 @@ routes.use((req, res, next) => {
       "GET /outros-gastos/:id",
       "PUT /outros-gastos/:id",
       "DELETE /outros-gastos/:id",
+      "GET /entradas",
+      "POST /entradas",
+      "GET /entradas/:id",
+      "PUT /entradas/:id",
+      "DELETE /entradas/:id",
+      "GET /entradas/relatorio/categoria",
+      "GET /entradas/relatorio/periodo",
       "GET /google/drive/folders",
       "GET /google/drive/:folderId",
       "POST /google/sheets/create",
