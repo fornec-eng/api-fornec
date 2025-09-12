@@ -100,11 +100,33 @@ routes.delete("/contratos/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin
 )
 
 // ==================== ROTAS DE MATERIAIS ====================
+routes.get("/materiais/relatorio/pagamentos", authMidd(["User", "Admin"]), (req, res) =>
+  materialController.relatorioPagamentos(req, res),
+)
+
+// CRUD básico de materiais
 routes.get("/materiais", authMidd(["User", "Admin"]), (req, res) => materialController.readAll(req, res))
 routes.post("/materiais", authMidd(["User", "Admin"]), (req, res) => materialController.create(req, res))
 routes.get("/materiais/:id", authMidd(["User", "Admin"]), (req, res) => materialController.readById(req, res))
 routes.put("/materiais/:id", authMidd(["User", "Admin"]), (req, res) => materialController.update(req, res))
 routes.delete("/materiais/:id", authMidd(["Admin"]), (req, res) => materialController.delete(req, res))
+
+// CRUD de pagamentos dentro dos materiais
+routes.get("/materiais/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) =>
+  materialController.listarPagamentos(req, res),
+)
+routes.post("/materiais/:id/pagamentos", authMidd(["User", "Admin"]), (req, res) =>
+  materialController.adicionarPagamento(req, res),
+)
+routes.get("/materiais/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) =>
+  materialController.buscarPagamento(req, res),
+)
+routes.put("/materiais/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) =>
+  materialController.atualizarPagamento(req, res),
+)
+routes.delete("/materiais/:id/pagamentos/:pagamentoId", authMidd(["User", "Admin"]), (req, res) =>
+  materialController.removerPagamento(req, res),
+)
 
 // ==================== ROTAS DE EQUIPAMENTOS ====================
 routes.get("/equipamentos", authMidd(["User", "Admin"]), (req, res) => equipamentosController.readAll(req, res))
@@ -185,6 +207,12 @@ routes.use((req, res, next) => {
       "GET /materiais/:id",
       "PUT /materiais/:id",
       "DELETE /materiais/:id",
+      "GET /materiais/relatorio/pagamentos",
+      "GET /materiais/:id/pagamentos",
+      "POST /materiais/:id/pagamentos",
+      "GET /materiais/:id/pagamentos/:pagamentoId",
+      "PUT /materiais/:id/pagamentos/:pagamentoId",
+      "DELETE /materiais/:id/pagamentos/:pagamentoId",
       "GET /equipamentos",
       "POST /equipamentos",
       "GET /equipamentos/:id",
@@ -195,6 +223,7 @@ routes.use((req, res, next) => {
       "GET /outros-gastos/:id",
       "PUT /outros-gastos/:id",
       "DELETE /outros-gastos/:id",
+      "GET /outros-gastos/relatorio/categoria",
       "GET /entradas",
       "POST /entradas",
       "GET /entradas/:id",
