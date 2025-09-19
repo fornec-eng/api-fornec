@@ -1,4 +1,5 @@
 const Obra = require("../models/obra")
+const User = require("../models/users")
 
 class ObraController {
   // Criar nova obra
@@ -25,7 +26,6 @@ class ObraController {
     }
   }
 
-  // Listar todas as obras
   async readAll(req, res) {
     try {
       const { page = 1, limit = 10, status, cliente, nome } = req.query
@@ -34,6 +34,26 @@ class ObraController {
       if (status) filter.status = status
       if (cliente) filter.cliente = new RegExp(cliente, "i")
       if (nome) filter.nome = new RegExp(nome, "i")
+
+      // Se não for Admin, filtrar apenas obras permitidas
+      if (req.userRole !== "Admin") {
+        const usuario = await User.findById(req.userID).select("obrasPermitidas")
+        if (usuario && usuario.obrasPermitidas.length > 0) {
+          filter._id = { $in: usuario.obrasPermitidas }
+        } else {
+          // Se usuário não tem obras permitidas, retorna lista vazia
+          return res.json({
+            error: false,
+            obras: [],
+            pagination: {
+              page: Number.parseInt(page),
+              limit: Number.parseInt(limit),
+              total: 0,
+              pages: 0,
+            },
+          })
+        }
+      }
 
       const skip = (page - 1) * limit
 
@@ -64,9 +84,21 @@ class ObraController {
     }
   }
 
-  // Buscar obra por ID
   async readById(req, res) {
     try {
+      const filter = { _id: req.params.id }
+
+      // Se não for Admin, verificar se tem permissão para ver esta obra
+      if (req.userRole !== "Admin") {
+        const usuario = await User.findById(req.userID).select("obrasPermitidas")
+        if (!usuario || !usuario.obrasPermitidas.includes(req.params.id)) {
+          return res.status(403).json({
+            error: true,
+            message: "Acesso negado a esta obra",
+          })
+        }
+      }
+
       const obra = await Obra.findById(req.params.id).populate("criadoPor", "nome email")
 
       if (!obra) {
@@ -232,6 +264,27 @@ class ObraController {
       return res.status(500).json({
         error: true,
         message: "Erro ao gerar relatório",
+        details: error.message,
+      })
+    }
+  }
+
+  async getObrasAtivas(req, res) {
+    try {
+      const obrasAtivas = await Obra.find({
+        status: { $in: ["planejamento", "em_andamento"] },
+      })
+        .select("_id nome cliente status")
+        .sort({ nome: 1 })
+
+      return res.json({
+        error: false,
+        obras: obrasAtivas,
+      })
+    } catch (error) {
+      return res.status(500).json({
+        error: true,
+        message: "Erro ao listar obras ativas",
         details: error.message,
       })
     }

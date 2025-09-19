@@ -30,6 +30,9 @@ routes.put("/user/:id", authMidd(["Admin"]), userController.update)
 routes.delete("/user/:id", authMidd(["Admin"]), userController.delete)
 routes.get("/user/pending", authMidd(["Admin"]), userController.listPendingApprovals)
 
+routes.put("/user/:userId/obras-permitidas", authMidd(["Admin"]), userController.updateObrasPermitidas)
+routes.get("/user/:userId/obras-permitidas", authMidd(["Admin", "User"]), userController.getObrasPermitidas)
+
 // Rotas para que o próprio usuário atualize ou delete seu registro
 routes.put("/user/self", authMidd(["User", "Admin"]), userController.updateSelf)
 routes.delete("/user/self", authMidd(["User", "Admin"]), userController.deleteSelf)
@@ -52,6 +55,7 @@ routes.post("/obras", authMidd(["User", "Admin"]), (req, res) => obraController.
 routes.get("/obras/:id", authMidd(["User", "Admin"]), (req, res) => obraController.readById(req, res))
 routes.put("/obras/:id", authMidd(["User", "Admin"]), (req, res) => obraController.update(req, res))
 routes.delete("/obras/:id", authMidd(["Admin"]), (req, res) => obraController.delete(req, res))
+routes.get("/obras-ativas", authMidd(["Admin"]), (req, res) => obraController.getObrasAtivas(req, res))
 routes.get("/obras/:id/relatorio-gastos", authMidd(["User", "Admin"]), (req, res) =>
   obraController.relatorioGastos(req, res),
 )
@@ -242,6 +246,9 @@ routes.use((req, res, next) => {
       "POST /google/sheets/add-sheet", // Nova,
       "PUT /obras/:id/spreadsheet",
       "GET /obras/spreadsheet/:spreadsheetId",
+      "GET /obras-ativas",
+      "PUT /user/:userId/obras-permitidas",
+      "GET /user/:userId/obras-permitidas",
     ],
   })
 })
