@@ -35,24 +35,21 @@ class ObraController {
       if (cliente) filter.cliente = new RegExp(cliente, "i")
       if (nome) filter.nome = new RegExp(nome, "i")
 
-      // Se não for Admin, filtrar apenas obras permitidas
-      if (req.userRole !== "Admin") {
-        const usuario = await User.findById(req.userID).select("obrasPermitidas")
-        if (usuario && usuario.obrasPermitidas.length > 0) {
-          filter._id = { $in: usuario.obrasPermitidas }
-        } else {
-          // Se usuário não tem obras permitidas, retorna lista vazia
-          return res.json({
-            error: false,
-            obras: [],
-            pagination: {
-              page: Number.parseInt(page),
-              limit: Number.parseInt(limit),
-              total: 0,
-              pages: 0,
-            },
-          })
-        }
+      const usuario = await User.findById(req.userID).select("obrasPermitidas")
+      if (usuario && usuario.obrasPermitidas && usuario.obrasPermitidas.length > 0) {
+        filter._id = { $in: usuario.obrasPermitidas }
+      } else {
+        // Se usuário não tem obras permitidas, retorna lista vazia
+        return res.json({
+          error: false,
+          obras: [],
+          pagination: {
+            page: Number.parseInt(page),
+            limit: Number.parseInt(limit),
+            total: 0,
+            pages: 0,
+          },
+        })
       }
 
       const skip = (page - 1) * limit
@@ -88,15 +85,12 @@ class ObraController {
     try {
       const filter = { _id: req.params.id }
 
-      // Se não for Admin, verificar se tem permissão para ver esta obra
-      if (req.userRole !== "Admin") {
-        const usuario = await User.findById(req.userID).select("obrasPermitidas")
-        if (!usuario || !usuario.obrasPermitidas.includes(req.params.id)) {
-          return res.status(403).json({
-            error: true,
-            message: "Acesso negado a esta obra",
-          })
-        }
+      const usuario = await User.findById(req.userID).select("obrasPermitidas")
+      if (!usuario || !usuario.obrasPermitidas || !usuario.obrasPermitidas.includes(req.params.id)) {
+        return res.status(403).json({
+          error: true,
+          message: "Acesso negado a esta obra",
+        })
       }
 
       const obra = await Obra.findById(req.params.id).populate("criadoPor", "nome email")
