@@ -79,7 +79,7 @@ const equipamentosSchema = new mongoose.Schema(
     formaPagamento: {
       type: String,
       required: [true, "Forma de pagamento é obrigatória"],
-      enum: ["pix", "transferencia", "avista", "cartao", "boleto", "Parcelado"],
+      enum: ["pix", "transferencia", "avista", "cartao", "boleto", "parcelado"],
       trim: true,
     },
     parcelas: {
