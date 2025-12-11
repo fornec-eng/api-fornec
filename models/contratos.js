@@ -60,6 +60,10 @@ const contratosSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    finalContrato: {
+      type: Date,
+      default: null,
+    },
     obraId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Obra",
