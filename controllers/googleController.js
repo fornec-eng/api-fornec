@@ -67,7 +67,7 @@ class GoogleController {
           },
           sheets: [
             {
-              properties: { title: "Dados" },
+              properties: { title: "Sheet1" },
               data: [
                 {
                   startRow: 0,
