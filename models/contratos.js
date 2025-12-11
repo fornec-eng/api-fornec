@@ -11,7 +11,7 @@ const pagamentoSchema = new mongoose.Schema(
     tipoPagamento: {
       type: String,
       required: [true, "Tipo de pagamento é obrigatório"],
-      enum: ["avista", "parcelado", "mensal", "por_etapa", "pix", "transferencia", "cartao", "boleto", "cheque"],
+      enum: ["pix", "transferencia", "avista", "cartao", "boleto", "Parcelado"],
       trim: true,
     },
     dataPagamento: {

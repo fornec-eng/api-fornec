@@ -62,7 +62,7 @@ const outrosGastosSchema = new mongoose.Schema(
     },
     formaPagamento: {
       type: String,
-      enum: ["pix", "transferencia", "avista", "cartao", "boleto", "cheque", "dinheiro", "outro"],
+      enum: ["pix", "transferencia", "avista", "cartao", "boleto", "Parcelado"],
       default: "pix",
     },
     chavePixBoleto: {

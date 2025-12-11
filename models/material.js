@@ -62,7 +62,7 @@ const materialSchema = new mongoose.Schema(
     formaPagamento: {
       type: String,
       required: [true, "Forma de pagamento é obrigatória"],
-      enum: ["pix", "transferencia", "avista", "cartao", "boleto", "cheque", "outro"],
+      enum: ["pix", "transferencia", "avista", "cartao", "boleto", "Parcelado"],
       trim: true,
     },
     chavePixBoleto: {
