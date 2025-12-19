@@ -97,7 +97,23 @@ class MaterialController {
   // Atualizar material
   async update(req, res) {
     try {
-      const material = await Material.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+      // Criar cópia dos dados para limpeza
+      const updateData = { ...req.body }
+
+      // Remover campos que não devem ser atualizados diretamente
+      delete updateData.pagamentos // Pagamentos devem ser atualizados via endpoints específicos
+      delete updateData._id
+      delete updateData.createdAt
+      delete updateData.updatedAt
+      delete updateData.__v
+      delete updateData.criadoPor
+
+      // Se obraId for um objeto (populado), extrair apenas o _id
+      if (updateData.obraId && typeof updateData.obraId === 'object') {
+        updateData.obraId = updateData.obraId._id
+      }
+
+      const material = await Material.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true })
         .populate("criadoPor", "nome email")
         .populate("obraId", "nome cliente")
 

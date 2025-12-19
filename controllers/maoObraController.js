@@ -210,6 +210,19 @@ class MaoObraController {
 
       // Processar dados
       const updateData = { ...req.body }
+
+      // Remover campos que não devem ser atualizados diretamente
+      delete updateData._id
+      delete updateData.createdAt
+      delete updateData.updatedAt
+      delete updateData.__v
+      delete updateData.criadoPor
+
+      // Se obraId for um objeto (populado), extrair apenas o _id
+      if (updateData.obraId && typeof updateData.obraId === 'object') {
+        updateData.obraId = updateData.obraId._id
+      }
+
       if (updateData.valor) {
         updateData.valor = parseFloat(updateData.valor)
       }

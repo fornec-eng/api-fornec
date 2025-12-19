@@ -95,7 +95,25 @@ class ContratosController {
   // Atualizar contrato
   async update(req, res) {
     try {
-      const contrato = await Contratos.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+      // Criar cópia dos dados para limpeza
+      const updateData = { ...req.body }
+
+      // Remover campos que não devem ser atualizados diretamente
+      delete updateData.pagamentos // Pagamentos devem ser atualizados via endpoints específicos
+      delete updateData._id
+      delete updateData.createdAt
+      delete updateData.updatedAt
+      delete updateData.__v
+      delete updateData.criadoPor
+      delete updateData.valorTotalPagamentos
+      delete updateData.statusGeralPagamentos
+
+      // Se obraId for um objeto (populado), extrair apenas o _id
+      if (updateData.obraId && typeof updateData.obraId === 'object') {
+        updateData.obraId = updateData.obraId._id
+      }
+
+      const contrato = await Contratos.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true })
         .populate("criadoPor", "nome email")
         .populate("obraId", "nome cliente")
 
@@ -404,4 +422,4 @@ class ContratosController {
   }
 }
 
-module.exports = new ContratosController()
+module.exports = new ContratosController()  
