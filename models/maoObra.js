@@ -96,8 +96,8 @@ const maoObraSchema = new mongoose.Schema(
     statusPagamento: {
       type: String,
       enum: {
-        values: ["pendente", "efetuado", "em_processamento", "cancelado", "atrasado"],
-        message: "Status de pagamento deve ser: pendente, efetuado, em_processamento, cancelado ou atrasado"
+        values: ["pendente", "efetuado", "pago", "em_processamento", "cancelado", "atrasado"],
+        message: "Status de pagamento deve ser: pendente, efetuado, pago, em_processamento, cancelado ou atrasado"
       },
       default: "pendente",
     },

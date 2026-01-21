@@ -20,7 +20,7 @@ const pagamentoSchema = new mongoose.Schema(
     },
     statusPagamento: {
       type: String,
-      enum: ["pendente", "efetuado", "em_processamento", "cancelado", "atrasado"],
+      enum: ["pendente", "efetuado", "pago", "em_processamento", "cancelado", "atrasado"],
       default: "pendente",
     },
     observacoes: {
@@ -82,7 +82,7 @@ const contratosSchema = new mongoose.Schema(
     // Status de pagamento do contrato (campo direto para facilitar atualizações)
     statusPagamento: {
       type: String,
-      enum: ["pendente", "efetuado", "em_processamento", "cancelado", "atrasado"],
+      enum: ["pendente", "efetuado", "pago", "em_processamento", "cancelado", "atrasado"],
       default: "pendente",
     },
     // Array de pagamentos aninhados (para parcelamentos)
