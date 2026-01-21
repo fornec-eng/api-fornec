@@ -85,7 +85,13 @@ const outrosGastosSchema = new mongoose.Schema(
       ref: "Obra",
       default: null, // null = gasto geral da Fornec
     },
-    // Array de pagamentos aninhados
+    // Status de pagamento do gasto (campo direto para facilitar atualizações)
+    statusPagamento: {
+      type: String,
+      enum: ["pendente", "efetuado", "em_processamento", "cancelado", "atrasado"],
+      default: "pendente",
+    },
+    // Array de pagamentos aninhados (para parcelamentos)
     pagamentos: [pagamentoSchema],
     criadoPor: {
       type: mongoose.Schema.Types.ObjectId,

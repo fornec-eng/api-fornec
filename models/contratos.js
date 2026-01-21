@@ -79,7 +79,13 @@ const contratosSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    // Array de pagamentos aninhados
+    // Status de pagamento do contrato (campo direto para facilitar atualizações)
+    statusPagamento: {
+      type: String,
+      enum: ["pendente", "efetuado", "em_processamento", "cancelado", "atrasado"],
+      default: "pendente",
+    },
+    // Array de pagamentos aninhados (para parcelamentos)
     pagamentos: [pagamentoSchema],
     criadoPor: {
       type: mongoose.Schema.Types.ObjectId,
